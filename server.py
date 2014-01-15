@@ -39,6 +39,7 @@ def all_users_edit_chars_pcts():
     """
     users = []
     chars_max = 0
+    score_max = 0
     for user in User.select():
         username = user.username
         pos_chars = 0
@@ -62,22 +63,40 @@ def all_users_edit_chars_pcts():
             chars_max = pos_chars
         if neg_chars > chars_max:
             chars_max = neg_chars
-    min_pct = float(config.LayoutConfig.min_bar_pct) / 100
-    pos_chars_add = chars_max * min_pct
-    neg_chars_add = chars_max * min_pct
+        if score > score_max:
+            score_max = score
+    min_char_bar_dec = float(config.LayoutConfig.min_char_bar_pct) / 100
+    min_score_bar_dec = float(config.LayoutConfig.min_score_bar_pct) / 100
+    pos_chars_add = chars_max * min_char_bar_dec
+    neg_chars_add = chars_max * min_char_bar_dec
+    score_add = score_max * min_score_bar_dec
     for user_data in users:
+
+        # Positive bar minimum sizing
         if user_data['pos_chars'] == chars_max:
             user_data['pos_chars_pct'] = 100
         else:
             pos_pct = pct_from_ints(user_data['pos_chars'] + pos_chars_add,
                                     chars_max + pos_chars_add)
             user_data['pos_chars_pct'] = pos_pct
+
+        # Negative bar minimum sizing
         if user_data['neg_chars'] == chars_max:
             user_data['neg_chars_pct'] = 100
         else:
             neg_pct = pct_from_ints(user_data['neg_chars'] + neg_chars_add,
                                     chars_max + neg_chars_add)
             user_data['neg_chars_pct'] = neg_pct
+
+        # Score bar minimum sizing
+        if user_data['score'] == score_max:
+            user_data['score_pct'] = 100
+        else:
+            score_pct = pct_from_ints(user_data['score'] + score_add,
+                                      score_max + score_add)
+            user_data['score_pct'] = score_pct
+
+    # Sort the list by most points and return it.
     users.sort(key=lambda u: u['score'], reverse=True)
     return users
 

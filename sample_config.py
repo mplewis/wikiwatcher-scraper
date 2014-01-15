@@ -33,4 +33,5 @@ class ScoringConfig:
 
 class LayoutConfig:
     """Determines cosmetics in the rendered HTML."""
-    min_bar_pct = 10
+    min_score_bar_pct = 5
+    min_char_bar_pct = 10
