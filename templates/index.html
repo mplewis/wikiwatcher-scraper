@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Bootstrap 101 Template</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+    .debug-view {
+      background-color: rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    .bar-graph {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    .legend-top {
+      font-weight: bold;
+    }
+    .legend-top-middle {
+      text-align: right;
+    }
+    .legend-left {
+      text-align: left;
+    }
+    .bars-row {
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+    .bars-row:nth-child(even) {
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+    .bar-container-left {
+      padding-right: 0;
+    }
+    .bar-container-right {
+      padding-left: 0;
+    }
+    .bar-left {
+      float: right;
+      background-color: red;
+      color: white;
+      text-align: left;
+      padding-left: 5px;
+      border-top-left-radius: 5px;
+      border-bottom-left-radius: 5px;
+    }
+    .bar-right {
+      background-color: green;
+      color: white;
+      text-align: right;
+      padding-right: 5px;
+      border-top-right-radius: 5px;
+      border-bottom-right-radius: 5px;
+    }
+    .bar-full {
+      background-color: #00b2f5;
+      color: white;
+      text-align: right;
+      padding-right: 5px;
+      border-radius: 5px;
+    }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Wikiwatcher</h1>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Username</th>
+            <th>Add (+{{ scoring_config.char_add_points }})</th>
+            <th>Del (+{{ scoring_config.char_del_points }})</th>
+            <th>New (+{{ scoring_config.new_page_points }})</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ user['username'] }}</td>
+              <td>{{ user['pos_chars'] }}</td>
+              <td>{{ user['neg_chars'] }}</td>
+              <td>{{ user['new_pages'] }}</td>
+              <td>{{ user['score'] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="col-xs-12 bar-graph">
+        <div class="legend-top row">
+          <div class="legend-left col-xs-2">User</div>
+          <div class="col-xs-5">Score</div>
+        </div>
+        {% for user in users %}
+          <div class="row bars-row">
+            <div class="col-xs-2 legend-left">{{ user['username'] }}</div>
+            <div class="col-xs-10">
+              <div class="bar-full" style="width: {{ user['score_pct'] }}%;">
+                {{ user['score'] }}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="col-xs-12 bar-graph">
+        <div class="legend-top row">
+          <div class="legend-left col-xs-2">User</div>
+          <div class="legend-top-middle col-xs-5">Chars Deleted</div>
+          <div class="col-xs-5">Chars Added</div>
+        </div>
+        {% for user in users %}
+          <div class="row bars-row">
+            <div class="col-xs-2 legend-left">{{ user['username'] }}</div>
+            <div class="col-xs-5 bar-container-left">
+              <div class="bar-left" style="width: {{ user['neg_chars_pct'] }}%;">
+                {{ user['neg_chars'] }}
+              </div>
+            </div>
+            <div class="col-xs-5 bar-container-right">
+              <div class="bar-right" style="width: {{ user['pos_chars_pct'] }}%;">
+                {{ user['pos_chars'] }}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+    </div>
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://code.jquery.com/jquery.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+  </body>
+</html>

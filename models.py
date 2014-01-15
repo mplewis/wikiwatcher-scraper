@@ -7,7 +7,7 @@ from peewee import (Model, ForeignKeyField, DateTimeField, TextField,
 class BaseModel(Model):
     """Used to set up the database target for all models."""
     class Meta:
-        database = config.Database.peewee_db
+        database = config.DatabaseConfig.peewee_db
 
 
 class User(BaseModel):
