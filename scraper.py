@@ -6,15 +6,7 @@ from models import User, Page, Change
 # External imports
 from wikitools import wiki, api, APIError
 from peewee import DoesNotExist
-from dateutil.parser import parse as isoparse
-
-
-class LoginError(Exception):
-    """
-    Used to indicate a failure to log into the MediaWiki API. Does nothing
-    special otherwise.
-    """
-    pass
+from isodate.isodatetime import parse_datetime as parse_iso_dt
 
 
 def request(params):
@@ -27,16 +19,20 @@ def request(params):
         # Perform the request if possible.
         try:
             return api.APIRequest(site, params).query()
-        # `APIError` indicates the user isn't logged in. Attempt to log in
-        # once, then redo the request. On failure, raise `LoginError`.
-        except APIError:
+        # `APIError` with arg[0] of `readapidenied` indicates the user
+        # needs to be logged in first. Attempt to log in once, then redo the
+        # request. On failure, raise the exception again.
+        except APIError, e:
+            # We can't handle non-`readapidenied` errors.
+            if e.args[0] != 'readapidenied':
+                raise e
             username = config.WikiConfig.login['username']
-            print 'Logging in as %s...' % username
+            print('Logging in as %s...' % username),
             if site.login(**config.WikiConfig.login):
-                print 'Logged in!'
+                print 'done.'
             else:
-                raise LoginError('Could not log in to %s as %s' %
-                                 (site_url, username))
+                print 'failed.'
+                raise e
 
 
 def get_raw_page_by_id(page_id):
@@ -104,10 +100,11 @@ def get_change_object(change):
         return Change.get(Change.change_id == change['rcid'])
     except DoesNotExist:
         size_diff = change['newlen'] - change['oldlen']
+        timestamp_dt = parse_iso_dt(change['timestamp'])
         return Change.create(change_id=change['rcid'],
                              change_type=change['type'],
                              user=get_user_object(change['user']),
-                             timestamp=isoparse(change['timestamp']),
+                             timestamp=timestamp_dt,
                              page=get_page_object(change['pageid']),
                              comment=change['comment'],
                              size_diff=size_diff)
@@ -179,22 +176,22 @@ print 'Done scraping.'
 
 # Add all User objects to the DB if they don't already exist.
 usernames = {change['user'] for change in new_changes}
-print 'Verifying %s users...' % len(usernames)
+print('Verifying %s users...' % len(usernames)),
 for username in usernames:
     get_user_object(username)
-print ' done.'
+print 'done.'
 
 # Add all Page objects to the DB if they don't already exist.
 page_ids = {change['pageid'] for change in new_changes}
-print 'Verifying %s pages...' % len(page_ids)
+print('Verifying %s pages...' % len(page_ids)),
 for page_id in page_ids:
     get_page_object(page_id)
-print ' done.'
+print 'done.'
 
 # Add all new Change objects to the DB.
-print 'Adding %s new changes...' % len(new_changes)
+print('Adding %s new changes...' % len(new_changes)),
 for change in new_changes:
     get_change_object(change)
-print ' done.'
+print 'done.'
 
 print 'Finished!'
