@@ -117,29 +117,6 @@
         {% endfor %}
       </div>
 
-      <div class="col-xs-12 bar-graph">
-        <div class="legend-top row">
-          <div class="legend-left col-xs-2">User</div>
-          <div class="legend-top-middle col-xs-5">Chars Deleted</div>
-          <div class="col-xs-5">Chars Added</div>
-        </div>
-        {% for user in users %}
-          <div class="row bars-row">
-            <div class="col-xs-2 legend-left">{{ user['username'] }}</div>
-            <div class="col-xs-5 bar-container-left">
-              <div class="bar-left" style="width: {{ user['neg_chars_pct'] }}%;">
-                {{ user['neg_chars'] }}
-              </div>
-            </div>
-            <div class="col-xs-5 bar-container-right">
-              <div class="bar-right" style="width: {{ user['pos_chars_pct'] }}%;">
-                {{ user['pos_chars'] }}
-              </div>
-            </div>
-          </div>
-        {% endfor %}
-      </div>
-
     </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
