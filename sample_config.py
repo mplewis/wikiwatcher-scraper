@@ -13,6 +13,6 @@ class WikiConfig:
              'password': 'PleaseInsertGirder'}
 
 
-class Database:
+class DatabaseConfig:
     """Sets the database storage for scraped objects."""
     peewee_db = SqliteDatabase('wikidata.db')
