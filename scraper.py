@@ -138,8 +138,6 @@ def scrape_mediawiki():
         resp = request(recent_changes_action)
         # Parse the response data.
         resp_data = resp['query']['recentchanges']
-        # Append the response data to the existing data.
-        new_changes = new_changes + resp_data
         req_num += 1
         # `changes_exist` is a flag that lets us break out of the double loop.
         changes_exist = False
@@ -158,7 +156,8 @@ def scrape_mediawiki():
             # We're expecting the exception if a `Change` object does not
             # already exist in the DB for the given change. Ignore it.
             except DoesNotExist:
-                pass
+                # Append the response data to the existing data.
+                new_changes.append(resp_item)
         # Two conditions break the continuing `recentchanges` request loop:
         #
         # * Reaching changes that exist in the DB
