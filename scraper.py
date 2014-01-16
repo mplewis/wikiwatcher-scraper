@@ -41,7 +41,9 @@ def get_raw_page_by_id(page_id):
     return the raw API response.
     """
     action = {'action': 'query',
-              'pageids': page_id}
+              'pageids': page_id,
+              'prop': 'info',
+              'inprop': 'pageid|title|url'}
     data = request(action)['query']['pages']
     if not str(page_id) in data:
         raise KeyError('Page with ID %s not found' % page_id)
@@ -75,7 +77,8 @@ def get_page_object(page_id):
     except DoesNotExist:
         data = get_raw_page_by_id(page_id)
         return Page.create(page_id=data['pageid'],
-                           page_title=data['title'])
+                           page_title=data['title'],
+                           page_url=data['fullurl'])
 
 
 def get_user_object(username):

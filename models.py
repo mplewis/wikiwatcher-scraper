@@ -20,6 +20,7 @@ class Page(BaseModel):
     """Represents a MediaWiki page."""
     page_id = IntegerField()
     page_title = TextField()
+    page_url = TextField()
 
 
 class Change(BaseModel):
