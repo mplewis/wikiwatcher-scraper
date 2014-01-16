@@ -109,89 +109,93 @@ def get_change_object(change):
                              comment=change['comment'],
                              size_diff=size_diff)
 
-# Create DB tables if they don't already exist.
 
-User.create_table(fail_silently=True)
-Page.create_table(fail_silently=True)
-Change.create_table(fail_silently=True)
+def scrape_mediawiki():
+    """Scrape MediaWiki for new changes and save them to the database."""
+    # Create DB tables if they don't already exist.
+    User.create_table(fail_silently=True)
+    Page.create_table(fail_silently=True)
+    Change.create_table(fail_silently=True)
 
-# Parse changes from the MediaWiki API.
-
-print 'Parsing recent changes from MediaWiki API.'
-# Properties to request from the MediaWiki API.
-recent_changes_props = ['user', 'ids', 'title', 'comment', 'sizes',
-                        'timestamp']
-# `rctype` specifies that we only want new page and edit page events.
-recent_changes_action = {'action': 'query',
-                         'list': 'recentchanges',
-                         'rctype': 'new|edit',
-                         'rcprop': '|'.join(recent_changes_props)}
-new_changes = []
-req_num = 1
-while True:
-    print 'Request %s' % req_num
-    # Make the API request.
-    resp = request(recent_changes_action)
-    # Parse the response data.
-    resp_data = resp['query']['recentchanges']
-    # Append the response data to the existing data.
-    new_changes = new_changes + resp_data
-    req_num += 1
-    # `changes_exist` is a flag that lets us break out of the double loop.
-    changes_exist = False
-    for resp_item in resp_data:
-        change_id = resp_item['rcid']
-        try:
-            # `Change.get` either returns a `Change` object if one exists for
-            # `change_id` or raises a `DoesNotExist` exception if a `Change`
-            # object does not exist.
-            Change.get(Change.change_id == change_id)
-            # If we've gotten this far, a `DoesNotExist` exception has not been
-            # raised, so the `Change` object exists for `change_id`. Set the
-            # breakout flag and break out of the inner loop.
-            changes_exist = True
+    # Parse changes from the MediaWiki API.
+    print 'Parsing recent changes from MediaWiki API.'
+    # Properties to request from the MediaWiki API.
+    recent_changes_props = ['user', 'ids', 'title', 'comment', 'sizes',
+                            'timestamp']
+    # `rctype` specifies that we only want new page and edit page events.
+    recent_changes_action = {'action': 'query',
+                             'list': 'recentchanges',
+                             'rctype': 'new|edit',
+                             'rcprop': '|'.join(recent_changes_props)}
+    new_changes = []
+    req_num = 1
+    while True:
+        print 'Request %s' % req_num
+        # Make the API request.
+        resp = request(recent_changes_action)
+        # Parse the response data.
+        resp_data = resp['query']['recentchanges']
+        # Append the response data to the existing data.
+        new_changes = new_changes + resp_data
+        req_num += 1
+        # `changes_exist` is a flag that lets us break out of the double loop.
+        changes_exist = False
+        for resp_item in resp_data:
+            change_id = resp_item['rcid']
+            try:
+                # `Change.get` either returns a `Change` object if one exists
+                # for `change_id` or raises a `DoesNotExist` exception if a
+                # `Change` object does not exist.
+                Change.get(Change.change_id == change_id)
+                # If we've gotten this far, a `DoesNotExist` exception has not
+                # been raised, so the `Change` object exists for `change_id`.
+                # Set the breakout flag and break out of the inner loop.
+                changes_exist = True
+                break
+            # We're expecting the exception if a `Change` object does not
+            # already exist in the DB for the given change. Ignore it.
+            except DoesNotExist:
+                pass
+        # Two conditions break the continuing `recentchanges` request loop:
+        #
+        # * Reaching changes that exist in the DB
+        # * Reaching the end of data, indicated by receiving data that doesn't
+        # contain the `query-continue` key
+        if changes_exist:
+            print 'Reached changes that already exist in DB.'
             break
-        # We're expecting the exception if a `Change` object does not
-        # already exist in the DB for the given change. Ignore it.
-        except DoesNotExist:
-            pass
-    # Two conditions break the continuing `recentchanges` request loop:
-    #
-    # * Reaching changes that exist in the DB
-    # * Reaching the end of data, indicated by receiving data that doesn't
-    # contain the `query-continue` key
-    if changes_exist:
-        print 'Reached changes that already exist in DB.'
-        break
-    if not 'query-continue' in resp:
-        print 'No more query-continue; reached end of data.'
-        break
-    # The request loop hasn't been broken, and the data contains a
-    # `query-continue` key. Use it to request the next page of data.
-    next_start_point = resp['query-continue']['recentchanges']['rcstart']
-    recent_changes_action['rcstart'] = next_start_point
-    print '    query-continue: %s' % recent_changes_action['rcstart']
-# Done!
-print 'Done scraping.'
+        if not 'query-continue' in resp:
+            print 'No more query-continue; reached end of data.'
+            break
+        # The request loop hasn't been broken, and the data contains a
+        # `query-continue` key. Use it to request the next page of data.
+        next_start_point = resp['query-continue']['recentchanges']['rcstart']
+        recent_changes_action['rcstart'] = next_start_point
+        print '    query-continue: %s' % recent_changes_action['rcstart']
+    # Done!
+    print 'Done scraping.'
 
-# Add all User objects to the DB if they don't already exist.
-usernames = {change['user'] for change in new_changes}
-print('Verifying %s users...' % len(usernames)),
-for username in usernames:
-    get_user_object(username)
-print 'done.'
+    # Add all User objects to the DB if they don't already exist.
+    usernames = {change['user'] for change in new_changes}
+    print('Verifying %s users...' % len(usernames)),
+    for username in usernames:
+        get_user_object(username)
+    print 'done.'
 
-# Add all Page objects to the DB if they don't already exist.
-page_ids = {change['pageid'] for change in new_changes}
-print('Verifying %s pages...' % len(page_ids)),
-for page_id in page_ids:
-    get_page_object(page_id)
-print 'done.'
+    # Add all Page objects to the DB if they don't already exist.
+    page_ids = {change['pageid'] for change in new_changes}
+    print('Verifying %s pages...' % len(page_ids)),
+    for page_id in page_ids:
+        get_page_object(page_id)
+    print 'done.'
 
-# Add all new Change objects to the DB.
-print('Adding %s new changes...' % len(new_changes)),
-for change in new_changes:
-    get_change_object(change)
-print 'done.'
+    # Add all new Change objects to the DB.
+    print('Verifying %s changes...' % len(new_changes)),
+    for change in new_changes:
+        get_change_object(change)
+    print 'done.'
 
-print 'Finished!'
+    print 'Finished!'
+
+if __name__ == '__main__':
+    scrape_mediawiki()
