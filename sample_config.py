@@ -4,6 +4,10 @@
 from peewee import SqliteDatabase
 
 
+class ScraperConfig:
+    scrape_interval = 300  # seconds
+
+
 class WikiConfig:
     """
     Used to configure the MediaWiki API URL as well as the User for logging in,
